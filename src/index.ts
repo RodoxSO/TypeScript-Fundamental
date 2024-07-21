@@ -1,71 +1,89 @@
-    import { accessOptions, userType } from "./models";
-    
-    let content = document.getElementById('content') as HTMLElement;
-    const button = <HTMLInputElement> document.querySelector('button[id="add"]');
-    const accessRadio = <HTMLElement> document.getElementById('accessRadio');
-    button.addEventListener('click', addEmployee);
+import { accessOptions, userType } from "./models";
 
-    const accessOptionsValues = Object.values(accessOptions)
+let content = document.getElementById('content') as HTMLInputElement;
+const button = <HTMLInputElement>document.querySelector('button[id="add"]');
+const accessRadio = <HTMLElement>document.getElementById('accessRadio');
+button.addEventListener('click', addEmployee);
 
-    const getUser = async (): Promise<userType[]> => {
-      const response: Response = await fetch('http://localhost:5011/users');
-      const users: userType[] = await response.json();
-      return users;
-    };
+const accessOptionsValues = Object.values(accessOptions)
 
-    const updateUserLayout = async (): Promise<void> =>{
-      const users: userType[] = await getUser();
+const getUser = async (): Promise<userType[]> => {
+  const response: Response = await fetch('http://localhost:5011/users');
+  const users: userType[] = await response.json();
+  return users;
+};
 
-      users.map((user: userType) => {
-        content.innerHTML += <string>(
-          createLine(user)
-        );
-      })
-    };
+const updateUserLayout = async (): Promise<void> => {
+  const users: userType[] = await getUser();
 
-    updateUserLayout();
+  users.map((user: userType) => {
+    content.innerHTML += <string>createLine(user);
+  });
+};
 
+updateUserLayout()
 
+function addEmployee (): void {
+  let formFields = [
+    <HTMLInputElement>document.querySelector('#fullName'),
+    <HTMLInputElement>document.querySelector('#register'),
+    document.querySelector('input[name="access"]:checked') as HTMLInputElement,
+    document.querySelector('#active') as HTMLInputElement,
+    document.querySelector('#addressHome') as HTMLInputElement,
+    document.querySelector('#addressWork') as HTMLInputElement,
+  ];
 
-    function addEmployee(): void{
-      let fullName = <HTMLInputElement> document.querySelector('#fullName');
-      let register = <HTMLInputElement> document.querySelector('#register');
-      let admin = document.querySelector('input[name="access"]:checked') as HTMLInputElement;
-      let active = document.querySelector('#active') as HTMLInputElement;
+  const [fullName, register, admin, active, addressHome, addressWork] = formFields;
 
-      let user: userType = {
-        fullName: fullName!.value, 
-        register: register.value, 
-        access: <accessOptions>admin.value, 
-        active: active.checked
-      }
-    }
+  let user: userType = {
+    fullName: fullName!.value,
+    register: register.value != '' ? register.value : undefined,
+    active: active.checked,
+    access: <accessOptions>admin.value,
+  };
 
-    const createAccessRadioLine = (value: string, i: number) => {
-      accessRadio.innerHTML += `
-      <div class="form-check">
-        <input class="form-check-input" type="radio" name="access" id="accessRadio${i}" value="${value}">
-        <label class="form-check-label capitalLetter" for="no">
-          ${value}
-        </label>
+  content.innerHTML += <string>createLine(user, addressHome.value, addressWork.value);
+}
+
+accessOptionsValues.forEach((value: string, i: number) => {
+  accessRadio.innerHTML += `
+  <div class="form-check">
+    <input class="form-check-input" type="radio" name="access" id="accessRadio${i}" value="${value}">
+    <label class="form-check-label capitalLetter" for="no">
+      ${value}
+    </label>
+  </div>
+  `
+});
+(<HTMLInputElement>document.getElementById('accessRadio0')).checked = true;
+
+function createLine(
+  {
+    fullName,
+    register = Math.random().toString(36).substring(7).toUpperCase(),
+    active = false,
+    access = accessOptions.undefined,
+  }: userType,
+  ...address: string[]
+): string {
+  return `
+    <div class="card mb-1">
+      <div class="card-header">
+        ${register}
       </div>
-      `;
-    }
-
-    accessOptionsValues.forEach(createAccessRadioLine);
-
-    function createLine(user: userType): string {
-      return `
-        <div class="card mb-1">
-          <div class="card-header">
-            ${user.register}
-          </div>
-          <div class="card-body">
-            <h5 class="card-title">${user.fullName}</h5>
-            <a href="#" class="btn btn-primary">${user.active ? 'Ativo' : 'Inativo'}</a>
-          </div>
-          <div class="card-footer bg-transparent border-success capitalLetter">
-            Acesso: ${user.access}
-          </div>
-        </div>`;
-    }
+      <div class="card-body">
+        <h5 class="card-title">${fullName}</h5>
+        <a href="#" class="btn btn-primary">${active ? 'Ativo' : 'Inativo'}</a>
+      </div>
+      ${
+        address.length > 0
+          ? `<div class="card-body">
+          <h6 class="card-title">${address.join('<br/>')}</h6>
+        </div>`
+          : ''
+      }
+      <div class="card-footer bg-transparent border-success">
+        Acesso: ${access}
+      </div>
+    </div>`;
+}
