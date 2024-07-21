@@ -1,17 +1,47 @@
-
+    import { accessOptions, userType } from "./models";
+    
+    let content = document.getElementById('content') as HTMLElement;
     const button = <HTMLInputElement> document.querySelector('button[id="add"]');
     const accessRadio = <HTMLElement> document.getElementById('accessRadio');
     button.addEventListener('click', addEmployee);
 
-    enum accessOptions {
-      administrator = "administrador",
-      nmanager = "gerente",
-      employee = "funcionario"
-    }
-
     const accessOptionsValues = Object.values(accessOptions)
 
-    accessOptionsValues.forEach((value: string, i: number) => {
+    const getUser = async (): Promise<userType[]> => {
+      const response: Response = await fetch('http://localhost:5011/users');
+      const users: userType[] = await response.json();
+      return users;
+    };
+
+    const updateUserLayout = async (): Promise<void> =>{
+      const users: userType[] = await getUser();
+
+      users.map((user: userType) => {
+        content.innerHTML += <string>(
+          createLine(user)
+        );
+      })
+    };
+
+    updateUserLayout();
+
+
+
+    function addEmployee(): void{
+      let fullName = <HTMLInputElement> document.querySelector('#fullName');
+      let register = <HTMLInputElement> document.querySelector('#register');
+      let admin = document.querySelector('input[name="access"]:checked') as HTMLInputElement;
+      let active = document.querySelector('#active') as HTMLInputElement;
+
+      let user: userType = {
+        fullName: fullName!.value, 
+        register: register.value, 
+        access: <accessOptions>admin.value, 
+        active: active.checked
+      }
+    }
+
+    const createAccessRadioLine = (value: string, i: number) => {
       accessRadio.innerHTML += `
       <div class="form-check">
         <input class="form-check-input" type="radio" name="access" id="accessRadio${i}" value="${value}">
@@ -19,36 +49,23 @@
           ${value}
         </label>
       </div>
-      `
-    })
-
-    function addEmployee(): void{
-      let content = document.getElementById('content') as HTMLElement;
-      let fullName = <HTMLInputElement> document.querySelector('#fullName');
-      let register = <HTMLInputElement> document.querySelector('#register');
-      let admin = document.querySelector('input[name="access"]:checked') as HTMLInputElement;
-      let active = document.querySelector('#active') as HTMLInputElement;
-
-      content.innerHTML += <string>(
-        createLine(fullName.value, register.value, admin.value, active.checked)
-      );
+      `;
     }
 
-    function createLine(fullName: string,
-                        NrRegister: string | number,
-                        admin: string,
-                        active: boolean): string {
+    accessOptionsValues.forEach(createAccessRadioLine);
+
+    function createLine(user: userType): string {
       return `
         <div class="card mb-1">
           <div class="card-header">
-            ${NrRegister}
+            ${user.register}
           </div>
           <div class="card-body">
-            <h5 class="card-title">${fullName}</h5>
-            <a href="#" class="btn btn-primary">${active ? 'Ativo' : 'Inativo'}</a>
+            <h5 class="card-title">${user.fullName}</h5>
+            <a href="#" class="btn btn-primary">${user.active ? 'Ativo' : 'Inativo'}</a>
           </div>
           <div class="card-footer bg-transparent border-success capitalLetter">
-            Acesso: ${admin}
+            Acesso: ${user.access}
           </div>
         </div>`;
     }
